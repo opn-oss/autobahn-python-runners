@@ -34,12 +34,13 @@ import txaio
 __author__ = 'Adam Jorgensen <adam.jorgensen@opendna.ai>'
 
 
-def generate_parser() -> ArgumentParser:
+def generate_parser():
     """
     Generates an ArgumentParser instance for use by the `main` function
     defined in this module
 
     :return:
+    :rtype: ArgumentParser
     """
     parser = ArgumentParser(conflict_handler='resolve')
     parser.add_argument(
@@ -51,12 +52,12 @@ def generate_parser() -> ArgumentParser:
     parser.add_argument(
         '-u', '--url',
         default=environ.get('CROSSBAR_URL'),
-        help=''
+        help='WAMP Router URL'
     )
     parser.add_argument(
         '-r', '--realm',
         default=environ.get('CROSSBAR_REALM'),
-        help=''
+        help='WAMP Realm'
     )
     parser.add_argument(
         '-e', '--extra-file',
@@ -67,13 +68,19 @@ def generate_parser() -> ArgumentParser:
     parser.add_argument(
         '-s', '--use-ssl', dest='ssl', type=bool,
         default=environ.get('CROSSBAR_USE_SSL', False),
-        help=''
+        help='Specify whether to use SSL'
     )
     parser.add_argument(
-        '-l', '--loglevel', dest='log_level', default='info',
-        help=''
+        '-l', '--loglevel', dest='log_level',
+        default='info',
+        help='Specify log level'
     )
-    # TODO: Add an argument for serializers
+    parser.add_argument(
+        '--serializers',
+        default=None,
+        action='append',
+        help='Fully-qualified path to a Serializer. Multiple items may be specified'
+    )
     return parser
 
 
@@ -102,13 +109,18 @@ def main(application_runner_class: type):
     parser = generate_parser()
     args = parser.parse_args()
     component = get_class(args.component)
-    extra = None
+    extra = serializers = None
     if args.extra_file is not None:
         extra = json.load(open(args.extra_file))
-    runner = application_runner_class(extra=extra, **{
+    if args.serializers is not None:
+        serializers = [
+            get_class(serializer)
+            for serializer in args.serializers
+        ]
+    runner = application_runner_class(extra=extra, serializers=serializers, **{
         key: value
         for key, value in vars(args).items()
-        if key not in ('component', 'extra_file', 'log_level')
+        if key not in ('component', 'extra_file', 'log_level', 'serializers')
     })
     txaio.start_logging(level=args.log_level)
     return runner.run(component)
