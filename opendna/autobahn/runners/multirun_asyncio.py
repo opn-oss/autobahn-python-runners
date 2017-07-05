@@ -23,14 +23,19 @@
 # SOFTWARE.
 ################################################################################
 from __future__ import unicode_literals, absolute_import
+
 import asyncio
+import json
 import signal
 
 import txaio
 from autobahn.asyncio.wamp import ApplicationRunner
-from autobahn.wamp.protocol import ApplicationSession
 
-from opendna.autobahn.runners import generate_parser, get_class
+from opendna.autobahn.runners import (
+    with_uvloop_if_possible,
+    RunnerArgumentParser,
+    get_class
+)
 
 
 async def multi_run(loop, runner, components):
@@ -60,15 +65,9 @@ async def multi_run(loop, runner, components):
     loop.close()
 
 
-def main():
-    try:
-        import uvloop
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        print('uvloop will be used')
-    except ImportError:
-        print('uvloop unavailable')
-    parser = generate_parser()
-    parser._remove_action(parser._option_string_actions['-e'])
+@with_uvloop_if_possible
+def run():
+    parser = RunnerArgumentParser()
     parser.add_argument(
         '-c', '--component',
         action='append',
@@ -77,21 +76,61 @@ def main():
         help='Fully-qualified path to a Component class. Can be used multiple times'
     )
     args = parser.parse_args()
-    runner = ApplicationRunner(**{
-        key: value
-        for key, value in vars(args).items()
-        if key not in ('components', 'log_level')
-    })
+    extras = {}
+    serializers = None
+    if args.extra_file is not None:
+        extras = json.load(open(args.extra_file))
+    if args.serializers is not None:
+        serializers = [
+            get_class(serializer)
+            for serializer in args.serializers
+        ]
+    components__runners = [
+        (
+            get_class(component),
+            ApplicationRunner(
+                extra=extras.get(component),
+                serializers=serializers,
+                **{
+                    key: value
+                    for key, value in vars(args).items()
+                    if key not in ('components', 'log_level', 'extra_file', 'serializers')
+                }
+            )
+        )
+        for component in args.components
+    ]
     loop = asyncio.get_event_loop()
+    txaio.use_asyncio()
+    txaio.config.loop = loop
+    coros = [
+        runner.run(component, start_loop=False, log_level=args.log_level)
+        for component, runner in components__runners
+    ]
+    results = loop.run_until_complete(asyncio.gather(*coros))
+    txaio.start_logging(level=args.log_level)
+
     try:
         loop.add_signal_handler(signal.SIGTERM, loop.stop)
     except NotImplementedError:
         # signals are not available on Windows
         pass
-    txaio.use_asyncio()
-    txaio.config.loop = loop
-    txaio.start_logging(level=args.log_level)
-    loop.run_until_complete(multi_run(loop, runner, args.components))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        # wait until we send Goodbye if user hit ctrl-c
+        # (done outside this except so SIGTERM gets the same handling)
+        pass
+
+    coros = [
+        loop.run_until_complete(protocol._session.leave())
+        for tranport, protocol in results
+        if protocol._session
+    ]
+
+    loop.close()
+
 
 if __name__ == '__main__':
-    main()
+    run()

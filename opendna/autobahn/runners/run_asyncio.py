@@ -26,20 +26,16 @@ from __future__ import unicode_literals, absolute_import
 
 from autobahn.asyncio.wamp import ApplicationRunner
 
-from opendna.autobahn.runners import build_application_runner
-
+from opendna.autobahn.runners import (
+    with_uvloop_if_possible,
+    build_application_runner
+)
 
 __author__ = 'Adam Jorgensen <adam.jorgensen.za@gmail.com>'
 
 
+@with_uvloop_if_possible
 def run():
-    try:
-        import uvloop
-        import asyncio
-        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-        print('uvloop will be used')
-    except ImportError:
-        print('uvloop unavailable')
     component, runner, log_level = build_application_runner(ApplicationRunner)
     runner.run(component, log_level=log_level)
 

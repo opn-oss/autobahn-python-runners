@@ -26,8 +26,9 @@ from __future__ import unicode_literals, absolute_import
 
 from setuptools import setup, find_packages
 
-from .opendna.autobahn.runners._version import __version__
-
+# read version string
+with open('opendna/autobahn/runners/_version.py') as f:
+    exec(f.read())  # defines __version__
 
 with open('README.md') as f:
     long_description = f.read()
@@ -48,7 +49,7 @@ setup(
     entry_points={
         'console_scripts': [
             'run_asyncio_component = opendna.autobahn.runners.run_asyncio:run',
-            'run_asyncio_components = opendna.autobahn.runners.multirun_asyncio:run'
+            'run_asyncio_components = opendna.autobahn.runners.multirun_asyncio:run',
             'run_twisted_component = opendna.autobahn.runners.run_twisted:run'
         ]
     },
