@@ -84,7 +84,7 @@ def generate_parser():
     return parser
 
 
-def get_class(fully_qualified_class_path: str) -> type:
+def get_class(fully_qualified_class_path):
     """
     Returns a class given an input fully-qualified class path E.g.
     a.b.c.d.ClassName
@@ -97,7 +97,7 @@ def get_class(fully_qualified_class_path: str) -> type:
     return getattr(imported_module, class_name)
 
 
-def main(application_runner_class: type):
+def main(application_runner_class):
     """
     Given an input CrossBar ApplicationRunner class, runs a Component
     defined using input from either the command-line or environment variables
