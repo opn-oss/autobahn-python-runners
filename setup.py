@@ -47,9 +47,9 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'run_asyncio_component = opendna.autobahn.runners.run_asyncio:main',
-            'run_asyncio_components = opendna.autobahn.runners.multirun_asyncio:main'
-            'run_twisted_component = opendna.autobahn.runners.run_twisted:main'
+            'run_asyncio_component = opendna.autobahn.runners.run_asyncio:run',
+            'run_asyncio_components = opendna.autobahn.runners.multirun_asyncio:run'
+            'run_twisted_component = opendna.autobahn.runners.run_twisted:run'
         ]
     },
     classifiers=[

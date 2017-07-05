@@ -22,14 +22,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ################################################################################
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 
 from autobahn.asyncio.wamp import ApplicationRunner
 
-from opendna.autobahn.runners import main as _main
+from opendna.autobahn.runners import build_application_runner
 
 
-def main():
+__author__ = 'Adam Jorgensen <adam.jorgensen.za@gmail.com>'
+
+
+def run():
     try:
         import uvloop
         import asyncio
@@ -37,7 +40,8 @@ def main():
         print('uvloop will be used')
     except ImportError:
         print('uvloop unavailable')
-    return _main(ApplicationRunner)
+    component, runner, log_level = build_application_runner(ApplicationRunner)
+    runner.run(component, log_level=log_level)
 
 if __name__ == '__main__':
-    main()
+    run()

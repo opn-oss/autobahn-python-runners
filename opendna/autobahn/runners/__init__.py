@@ -25,63 +25,65 @@
 from __future__ import unicode_literals, absolute_import
 
 import json
-from argparse import ArgumentParser
+from argparse import ArgumentParser, HelpFormatter
 from importlib import import_module
 from os import environ
 
-import txaio
 
-__author__ = 'Adam Jorgensen <adam.jorgensen@opendna.ai>'
+__author__ = 'Adam Jorgensen <adam.jorgensen.za@gmail.com>'
 
 
-def generate_parser():
+class RunnerArgumentParser(ArgumentParser):
     """
-    Generates an ArgumentParser instance for use by the `main` function
-    defined in this module
-
-    :return:
-    :rtype: ArgumentParser
+    An argument parser pre-configured for use within the Component-runner context
     """
-    parser = ArgumentParser(conflict_handler='resolve')
-    parser.add_argument(
-        '-c', '--component',
-        default=environ.get('CROSSBAR_COMPONENT'),
-        required=True,
-        help='Fully-qualified path to a Component class'
-    )
-    parser.add_argument(
-        '-u', '--url',
-        default=environ.get('CROSSBAR_URL'),
-        help='WAMP Router URL'
-    )
-    parser.add_argument(
-        '-r', '--realm',
-        default=environ.get('CROSSBAR_REALM'),
-        help='WAMP Realm'
-    )
-    parser.add_argument(
-        '-e', '--extra-file',
-        default=environ.get('CROSSBAR_EXTRAS_FILE'),
-        help='Path to JSON file of data to be supplied to the '
-             'Component via the config __init__ parameter'
-    )
-    parser.add_argument(
-        '-s', '--use-ssl', dest='ssl', type=bool,
-        default=environ.get('CROSSBAR_USE_SSL', False),
-        help='Specify whether to use SSL'
-    )
-    parser.add_argument(
-        '-l', '--loglevel', dest='log_level',
-        default='info',
-        help='Specify log level'
-    )
-    parser.add_argument(
-        '--serializers',
-        default=None,
-        action='append',
-        help='Fully-qualified path to a Serializer. Multiple items may be specified'
-    )
-    return parser
+    def __init__(self, prog=None, usage=None, description=None, epilog=None,
+                 parents=[], formatter_class=HelpFormatter, prefix_chars='-',
+                 fromfile_prefix_chars=None, argument_default=None,
+                 conflict_handler='resolve', add_help=True, allow_abbrev=True):
+        super(RunnerArgumentParser, self).__init__(
+            prog, usage, description, epilog, parents, formatter_class,
+            prefix_chars, fromfile_prefix_chars, argument_default,
+            conflict_handler, add_help, allow_abbrev
+        )
+        self.add_argument(
+            '-c', '--component',
+            default=environ.get('CROSSBAR_COMPONENT'),
+            required=True,
+            help='Fully-qualified path to a Component class'
+        )
+        self.add_argument(
+            '-u', '--url',
+            default=environ.get('CROSSBAR_URL'),
+            help='WAMP Router URL'
+        )
+        self.add_argument(
+            '-r', '--realm',
+            default=environ.get('CROSSBAR_REALM'),
+            help='WAMP Realm'
+        )
+        self.add_argument(
+            '-e', '--extra-file',
+            default=environ.get('CROSSBAR_EXTRAS_FILE'),
+            help='Path to JSON file of data to be supplied to the '
+                 'Component via the config __init__ parameter'
+        )
+        self.add_argument(
+            '-s', '--use-ssl', dest='ssl', type=bool,
+            default=environ.get('CROSSBAR_USE_SSL', False),
+            help='Specify whether to use SSL'
+        )
+        self.add_argument(
+            '-l', '--loglevel', dest='log_level',
+            default='info',
+            help='Specify log level'
+        )
+        self.add_argument(
+            '--serializers',
+            default=None,
+            action='append',
+            help='Fully-qualified path to a Serializer. Multiple items may be specified'
+        )
 
 
 def get_class(fully_qualified_class_path):
@@ -97,7 +99,7 @@ def get_class(fully_qualified_class_path):
     return getattr(imported_module, class_name)
 
 
-def main(application_runner_class):
+def build_application_runner(application_runner_class):
     """
     Given an input CrossBar ApplicationRunner class, runs a Component
     defined using input from either the command-line or environment variables
@@ -105,8 +107,9 @@ def main(application_runner_class):
 
     :param application_runner_class:
     :return:
+    :rtype: tuple
     """
-    parser = generate_parser()
+    parser = RunnerArgumentParser()
     args = parser.parse_args()
     component = get_class(args.component)
     extra = serializers = None
@@ -122,5 +125,4 @@ def main(application_runner_class):
         for key, value in vars(args).items()
         if key not in ('component', 'extra_file', 'log_level', 'serializers')
     })
-    txaio.start_logging(level=args.log_level)
-    return runner.run(component)
+    return component, runner, args.log_level
