@@ -24,19 +24,20 @@
 ################################################################################
 from __future__ import unicode_literals, absolute_import
 
+import os
+
 from setuptools import setup, find_packages
 
-# read version string
-with open('opendna/autobahn/runners/_version.py') as f:
-    exec(f.read())  # defines __version__
 
-with open('README.md') as f:
-    long_description = f.read()
+prefix = os.path.dirname(__file__)
+
+# read version string
+with open(os.path.join(prefix, 'opendna', 'autobahn', 'runners', '_version.py')) as f:
+    exec(f.read())  # defines __version__
 
 setup(
     name='autobahn-python-runners',
     description='A collection of component runners for Autobahn Python',
-    long_description=long_description,
     version=__version__,
     packages=find_packages(),
     url='https://github.com/opn-oss/autobahn-python-runners',
