@@ -28,16 +28,20 @@ import os
 
 from setuptools import setup, find_packages
 
-
 prefix = os.path.dirname(__file__)
 
 # read version string
 with open(os.path.join(prefix, 'opendna', 'autobahn', 'runners', '_version.py')) as f:
     exec(f.read())  # defines __version__
 
+# read package long description
+with open(os.path.join(prefix, 'README.rst')) as f:
+    long_description = f.read()
+
 setup(
     name='autobahn-python-runners',
     description='A collection of component runners for Autobahn Python',
+    long_description=long_description,
     version=__version__,
     packages=find_packages(),
     url='https://github.com/opn-oss/autobahn-python-runners',
