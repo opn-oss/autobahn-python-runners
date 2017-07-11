@@ -61,34 +61,33 @@ class RunnerArgumentParser(ArgumentParser):
         )
         self.add_argument(
             '-c', '--component',
-            default=environ.get('CROSSBAR_COMPONENT'),
-            required=True,
+            default=environ.get('WAMP_COMPONENT'),
             help='Fully-qualified path to a Component class'
         )
         self.add_argument(
             '-u', '--url',
-            default=environ.get('CROSSBAR_URL'),
+            default=environ.get('WAMP_URL'),
             help='WAMP Router URL'
         )
         self.add_argument(
             '-r', '--realm',
-            default=environ.get('CROSSBAR_REALM'),
+            default=environ.get('WAMP_REALM'),
             help='WAMP Realm'
         )
         self.add_argument(
             '-e', '--extra-file',
-            default=environ.get('CROSSBAR_EXTRAS_FILE'),
+            default=environ.get('WAMP_EXTRAS_FILE'),
             help='Path to JSON file of data to be supplied to the '
                  'Component via the config __init__ parameter'
         )
         self.add_argument(
             '-s', '--use-ssl', dest='ssl', type=bool,
-            default=environ.get('CROSSBAR_USE_SSL', False),
+            default=environ.get('WAMP_USE_SSL', False),
             help='Specify whether to use SSL'
         )
         self.add_argument(
             '-l', '--loglevel', dest='log_level',
-            default='info',
+            default=environ.get('WAMP_LOG_LEVEL', 'info'),
             help='Specify log level'
         )
         self.add_argument(
@@ -138,4 +137,4 @@ def build_application_runner(application_runner_class):
         for key, value in vars(args).items()
         if key not in ('component', 'extra_file', 'log_level', 'serializers')
     })
-    return component, runner, args.log_level
+    return component, runner, args.log_level.upper()
