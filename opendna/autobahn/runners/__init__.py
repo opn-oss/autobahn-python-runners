@@ -137,4 +137,4 @@ def build_application_runner(application_runner_class):
         for key, value in vars(args).items()
         if key not in ('component', 'extra_file', 'log_level', 'serializers')
     })
-    return component, runner, args.log_level.upper()
+    return component, runner, args.log_level.lower()
