@@ -49,7 +49,8 @@ setup(
     author='Adam Jorgensen',
     author_email='adam.jorgensen.za@gmail.com',
     install_requires=[
-        'autobahn>=17.3.1'
+        'autobahn>=17.3.1',
+        'opn-oss-py-common>=17.8.4'
     ],
     entry_points={
         'console_scripts': [
