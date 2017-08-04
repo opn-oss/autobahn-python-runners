@@ -30,9 +30,9 @@ import signal
 
 import txaio
 from autobahn.asyncio.wamp import ApplicationRunner
+from opendna.common.decorators import with_uvloop_if_possible
 
 from opendna.autobahn.runners import (
-    with_uvloop_if_possible,
     RunnerArgumentParser,
     get_class
 )

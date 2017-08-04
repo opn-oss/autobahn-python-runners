@@ -32,20 +32,6 @@ from os import environ
 __author__ = 'Adam Jorgensen <adam.jorgensen.za@gmail.com>'
 
 
-def with_uvloop_if_possible(f):
-    """ Simple decorator to provide optional uvloop usage"""
-    def decorated_with_uvloop_if_possible():
-        try:
-            import uvloop
-            import asyncio
-            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-            print('uvloop will be used')
-        except ImportError:
-            print('uvloop unavailable')
-        return f()
-    return decorated_with_uvloop_if_possible
-
-
 class RunnerArgumentParser(ArgumentParser):
     """
     An argument parser pre-configured for use within the Component-runner context

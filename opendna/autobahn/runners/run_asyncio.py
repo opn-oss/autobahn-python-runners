@@ -25,11 +25,9 @@
 from __future__ import unicode_literals, absolute_import
 
 from autobahn.asyncio.wamp import ApplicationRunner
+from opendna.common.decorators import with_uvloop_if_possible
 
-from opendna.autobahn.runners import (
-    with_uvloop_if_possible,
-    build_application_runner
-)
+from opendna.autobahn.runners import build_application_runner
 
 __author__ = 'Adam Jorgensen <adam.jorgensen.za@gmail.com>'
 
