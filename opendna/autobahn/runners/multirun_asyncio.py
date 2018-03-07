@@ -75,6 +75,13 @@ def run():
         required=True,
         help='Fully-qualified path to a Component class. Can be used multiple times'
     )
+    parser.add_argument(
+        '-n',
+        '--necromancy',
+        action='store_true',
+        default=False,
+        help='Enable necromancy. Attempts to revive Components whose connection to the WAMP router has failed'
+    )
     args = parser.parse_args()
     extras = {}
     serializers = None
@@ -108,6 +115,24 @@ def run():
         for component, runner in components__runners
     ]
     results = loop.run_until_complete(asyncio.gather(*coros))
+
+    if args.necromancy:
+        async def checkpoint():
+            nonlocal results, coros, components__runners, loop
+            import asyncio
+            while True:
+                print('Taking a nap')
+                await asyncio.sleep(10)
+                print('Checking for life...')
+                for (component, runner), (transport, protocol) in zip(components__runners, results):
+                    if transport.is_closing():
+                        print('Transport closing. Waiting...')
+                        await asyncio.sleep(5)
+                        print('Attempting CPR...')
+                        asyncio.ensure_future(runner.run(component, start_loop=False, log_level=args.log_level), loop=loop)
+
+        asyncio.ensure_future(checkpoint(), loop=loop)
+
     txaio.start_logging(level=args.log_level)
 
     try:
@@ -122,6 +147,9 @@ def run():
         # wait until we send Goodbye if user hit ctrl-c
         # (done outside this except so SIGTERM gets the same handling)
         pass
+    except Exception as e:
+        pass
+        raise
 
     coros = [
         loop.run_until_complete(protocol._session.leave())
