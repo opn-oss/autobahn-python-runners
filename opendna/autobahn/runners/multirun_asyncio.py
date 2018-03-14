@@ -26,8 +26,8 @@ from __future__ import unicode_literals, absolute_import
 
 import asyncio
 import json
+import logging
 import signal
-
 import txaio
 from autobahn.asyncio.wamp import ApplicationRunner
 from opendna.common.decorators import with_uvloop_if_possible
@@ -36,33 +36,6 @@ from opendna.autobahn.runners import (
     RunnerArgumentParser,
     get_class
 )
-
-
-async def multi_run(loop, runner, components):
-    """
-
-    :param loop:
-    :type loop asyncio.AbstractEventLoop
-    :param runner:
-    :type runner autobahn.wamp.protocol.ApplicationSession:
-    :param components:
-    :type components list:
-    :return:
-    """
-    awaitables = [
-        runner.run(make=get_class(component), start_loop=False)
-        for component in components
-    ]
-    results = await asyncio.gather(*awaitables)
-    try:
-        while True:
-            await asyncio.sleep(1)
-    except KeyboardInterrupt:
-        pass
-    for transport, protocol in results:
-        loop.run_until_complete(protocol._session.leave())
-
-    loop.close()
 
 
 @with_uvloop_if_possible
@@ -81,6 +54,12 @@ def run():
         action='store_true',
         default=False,
         help='Enable necromancy. Attempts to revive Components whose connection to the WAMP router has failed'
+    )
+    parser.add_argument(
+        '--necromancy_sleep',
+        default=10,
+        type=int,
+        help='Configure sleep-time between transport death checks'
     )
     args = parser.parse_args()
     extras = {}
@@ -101,7 +80,10 @@ def run():
                 **{
                     key: value
                     for key, value in vars(args).items()
-                    if key not in ('components', 'log_level', 'extra_file', 'serializers')
+                    if key not in (
+                        'components', 'log_level', 'extra_file', 'serializers',
+                        'necromancy', 'necromancy_sleep'
+                    )
                 }
             )
         )
@@ -115,25 +97,25 @@ def run():
         for component, runner in components__runners
     ]
     results = loop.run_until_complete(asyncio.gather(*coros))
+    txaio.start_logging(level=args.log_level)
+    logger = logging.getLogger('autobahn-python-runners')
 
     if args.necromancy:
-        async def checkpoint():
-            nonlocal results, coros, components__runners, loop
-            import asyncio
+        logging.info('Necromancy enabled')
+
+        @asyncio.coroutine
+        def necromancy_check():
+            nonlocal results, components__runners
             while True:
-                print('Taking a nap')
-                await asyncio.sleep(10)
-                print('Checking for life...')
-                for (component, runner), (transport, protocol) in zip(components__runners, results):
-                    if transport.is_closing():
-                        print('Transport closing. Waiting...')
-                        await asyncio.sleep(5)
-                        print('Attempting CPR...')
-                        asyncio.ensure_future(runner.run(component, start_loop=False, log_level=args.log_level), loop=loop)
+                yield from asyncio.sleep(args.necromancy_sleep)
+                logger.info('Checking for dead transports...')
+                data = enumerate(zip(components__runners, results))
+                for index, ((component, runner), (transport, protocol)) in data:
+                    if transport.is_closing() and not protocol._session:
+                        logger.info('Dead transport detected. Attempting to raise the dead...')
+                        results[index] = yield from runner.run(component, start_loop=False, log_level=args.log_level)
 
-        asyncio.ensure_future(checkpoint(), loop=loop)
-
-    txaio.start_logging(level=args.log_level)
+        asyncio.ensure_future(necromancy_check(), loop=loop)
 
     try:
         loop.add_signal_handler(signal.SIGTERM, loop.stop)
