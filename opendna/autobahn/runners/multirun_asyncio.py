@@ -129,9 +129,6 @@ def run():
         # wait until we send Goodbye if user hit ctrl-c
         # (done outside this except so SIGTERM gets the same handling)
         pass
-    except Exception as e:
-        pass
-        raise
 
     coros = [
         loop.run_until_complete(protocol._session.leave())
