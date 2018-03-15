@@ -29,8 +29,8 @@ Python environment's scripts path:
 - ``run_asyncio_component``
 - ``run_asyncio_components``
 
-Optionally, you ``pip install uvloop`` for enhanced event-loop perforance with
-the AsyncIO runners. You will need ``libuv`` with installed in order to do this.
+Optionally, you ``pip install uvloop`` for enhanced event-loop performance with
+the AsyncIO runners. You will need ``libuv`` installed in order to do this.
 
 Usage
 -----
