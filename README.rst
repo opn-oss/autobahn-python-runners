@@ -108,6 +108,12 @@ The AsyncIO multi-runner makes the following changes to the parameter options:
   and the value associated with each key is a plain object of data to be supplied
   to the relevant component class instance via the config parameter of the
   class constructor method
+- ``-n``/``--necromancy`` is used to enable the transport recovery feature. When
+  enabled the multi-runner will periodically check to see if the WAMP connection
+  between a component and the router has failed. If a failure is detected then
+  a new component instance is created and will attempt to connect to the router
+- ``--necromancy-sleep`` accepts integers and defaults to ``10``. This parameter
+  specifies how regularly the check for failed WAMP connections will be performed
 
 
 Roadmap
@@ -120,6 +126,7 @@ Done:
 - AsyncIO multi-runner
 - Basic documentation
 - uvloop support for AsyncIO runners
+- Option for multi-runners to transparently restart crashed components
 
 Todo:
 
@@ -128,4 +135,3 @@ Todo:
 Maybe:
 
 - Twisted multi-runner
-- Option for multi-runners to transparently restart crashed components

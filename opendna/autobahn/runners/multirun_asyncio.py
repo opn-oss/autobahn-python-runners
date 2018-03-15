@@ -56,7 +56,7 @@ def run():
         help='Enable necromancy. Attempts to revive Components whose connection to the WAMP router has failed'
     )
     parser.add_argument(
-        '--necromancy_sleep',
+        '--necromancy-sleep',
         default=10,
         type=int,
         help='Configure sleep-time between transport death checks'
